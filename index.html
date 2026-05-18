@@ -839,6 +839,7 @@
     }
 
     .edit-toggle {
+      display: none;
       position: fixed;
       right: 18px;
       bottom: 18px;
@@ -848,6 +849,10 @@
       background: var(--accent);
       color: #fff;
       box-shadow: 0 14px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    body.editor-enabled .edit-toggle {
+      display: inline-flex;
     }
 
     .quick-hint {
@@ -1407,6 +1412,7 @@
     let activeProjectTag = "All";
     let commandItems = [];
     let activeCommandIndex = 0;
+    let editorEnabled = false;
 
     function readInitialContent() {
       const saved = localStorage.getItem(storageKey);
@@ -1693,7 +1699,7 @@
           action: () => navigate("skills")
         }))),
         { icon: "◐", title: "Toggle theme", sub: "Switch light/dark mode", kind: "Action", action: toggleTheme },
-        { icon: "✎", title: "Edit portfolio", sub: "Open the content editor", kind: "Action", action: openEditor }
+        ...(editorEnabled ? [{ icon: "✎", title: "Edit portfolio", sub: "Open the content editor", kind: "Action", action: openEditor }] : [])
       ];
     }
 
@@ -1888,9 +1894,16 @@
     }
 
     function openEditor() {
+      enableEditorMode();
       renderEditor();
       document.getElementById("editor-overlay").classList.add("open");
       document.getElementById("editor-panel").classList.add("open");
+    }
+
+    function enableEditorMode() {
+      editorEnabled = true;
+      document.body.classList.add("editor-enabled");
+      buildCommandItems();
     }
 
     function closeEditor() {
@@ -1942,6 +1955,11 @@
       renderAll();
       renderEditor();
       setEditorStatus("Reset to the file's built-in content.");
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("edit") === "true") {
+      enableEditorMode();
     }
 
     renderShell();
@@ -1998,6 +2016,11 @@
         event.preventDefault();
         openEditor();
       }
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "e") {
+        event.preventDefault();
+        enableEditorMode();
+        setEditorStatus("Editor button enabled for this page view.");
+      }
       if (event.key === "Escape") {
         closeCommandPalette();
         if (!isTyping) closeEditor();
@@ -2009,7 +2032,7 @@
       }
     });
 
-    if (new URLSearchParams(window.location.search).get("edit") === "true") {
+    if (params.get("edit") === "true") {
       openEditor();
     }
   </script>
